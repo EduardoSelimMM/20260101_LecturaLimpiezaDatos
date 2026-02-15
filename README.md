@@ -5,8 +5,8 @@
 ## Horario
 
 + Martes: 18:00 a 20:00 hrs. En línea.
-+ Jueves: 18:00 a 20:30 hrs. En línea.
-+ Sábado: 9:30 a 12:00 hrs. En línea
++ Jueves: 18:00 a 21:00 hrs. En línea.
++ Sábado: 9:00 a 12:00 hrs. En línea
 
 ## Sesiones 
 - Sesion 1: 14 de febrero de 2026. Pospuesta por causas de salud.
