@@ -9,5 +9,5 @@
 + Sábado: 9:30 a 12:00 hrs. En línea
 
 ## Sesiones 
-- [Sesion 1: 14 de febrero de 2026]. Pospuesta por causas de salud.
+- Sesion 1: 14 de febrero de 2026. Pospuesta por causas de salud.
 - [Sesion 1: 17 de febrero de 2026](./sesion01)
