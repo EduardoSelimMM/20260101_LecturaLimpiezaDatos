@@ -1,0 +1,583 @@
+---
+title: "Sesion 01"
+author: "Eduardo Martínez"
+date: "17 de febrero"
+output: html_document
+---
+
++ El objetivo de este módulo es aprender a leer datos de diferentes fuentes y traerlos a R y Python para manipularlos.
+
++ La facilidad o dificultad para manipularlos, dependerá de la calidad de sus datos , NO NO NO NO NO de R o de Python.
+
++ Se dice que en un proyecto de Ciencia de Datos, aproximadamente el 65% del tiempo se usar para limpiar los datos.
+
++ Vamos a empezar con dos (tres) fuentes que son clásicas: archivos xls, xlsx, y csv (comma separared values).... Los abren EXCEL/Google Sheets
+
+```{r}
+library(readxl) # leer archivos xlsx
+library(dplyr) # Gramática de dataframes
+library(ggplot2) # Graficación
+library(lubridate) # Funciones para manejo de fechas
+```
++ Si el archivo Rmd en el que estás trabajando está en la misma carpeta que el archivo "VentasNum2024.xlsx" no hay que hacer nada.
+
++ En caso contrario, hay que poner toda la ruta del archivo "Folder1/Folder2/Folder3/archivo"
+
++ Otra forma que no recomiendo es con las funciones getwd (get working directory) y setwd (set working directory)
+
+```{r}
+getwd()
+```
+
++ Si quisera cambiar esta ruta `setwd("Mi/nueva/ruta")`
+
+```{r}
+datos_ventas <- readxl::read_xlsx("VentasNum2024.xlsx", sheet = "Ventas")
+datos_ventas
+```
++ Una primera librería que usaremos para entender la estructura de nuestros datos y empezar a diseñar una estrategia para limpiarlo es `{skimr}`
+
+```{r}
+library(skimr)
+```
+
++ La función estrella de la librería es la función `skim()`
+
+```{r}
+skim(datos_ventas)
+```
++ Este archivo xlsx que estamos trabjajando tiene una segundo sheet (hoja) que se llama Producto
+
+```{r}
+datos_productos <- readxl::read_xlsx("VentasNum2024.xlsx", sheet = "Producto")
+datos_productos
+```
+
+```{r}
+datos_productos |> skim()
+```
+
++ Mi primera tarea de limpieza quiero que sea crear 3 nuevas columnas: una con el mes de venta, otra con el día de venta y otra con el día semana de venta. Para eso usaré tres funciones de la librería lubridate.
+
++ Aprovecho para presentarles un uso de uno de los verbos más populares de la librería dplyr, que es mutate, básicamente crea nuevas columnas a partir de las existentes.
+
+```{r}
+datos_ventas |>
+  mutate(`Fecha Venta` = as.Date(`Fecha Venta`, format = "%d/%m/%Y")) |>
+  mutate(MesVenta = lubridate::month(`Fecha Venta`),
+         DiaVenta = lubridate::day(`Fecha Venta`),
+         DiaSemana = lubridate::wday(`Fecha Venta`))
+```
+
++ Ahora sí que ví que me gustó el resultado, sobre-escribo mi nuevo dataframe
+
+```{r}
+datos_ventas <- datos_ventas %>%
+  mutate(`Fecha Venta` = as.Date(`Fecha Venta`, format = "%d/%m/%Y")) %>%
+  mutate(MesVenta = lubridate::month(`Fecha Venta`),
+         DiaVenta = lubridate::day(`Fecha Venta`),
+         DiaSemana = lubridate::wday(`Fecha Venta`))
+```
+
+```{r}
+datos_ventas
+```
+
+
++ Mi segunda tarea será obtener los tiempos entre fecha de orden y fecha de entrega, fecha de orden y fecha de procesamiento y tiempo que estuvo en reparto
+
+```{r}
+datos_ventas %>%
+  mutate(FecEntrg = as.Date(FechaEntrega, format = "%d/%m/%Y"),
+         FecSalida = as.Date(FechaCamino, format = "%d/%m/%Y")) %>%
+  mutate(TiempoEntrega = FecEntrg - `Fecha Venta`,
+         TiempoCalle = FecEntrg - FecSalida,
+         TiempoProces = FecSalida - `Fecha Venta`)
+```
+
++ Me gusta lo que veo, voy a hacer la asignación
+
+```{r}
+datos_ventas <- datos_ventas %>%
+  mutate(FecEntrg = as.Date(FechaEntrega, format = "%d/%m/%Y"),
+         FecSalida = as.Date(FechaCamino, format = "%d/%m/%Y")) %>%
+  mutate(TiempoEntrega = FecEntrg - `Fecha Venta`,
+         TiempoCalle = FecEntrg - FecSalida,
+         TiempoProces = FecSalida - `Fecha Venta`)
+```
+
+```{r}
+datos_ventas
+```
+
++ Me gustaría saber cuál es la distrubución de estos tiempos dependiendo del estado de la república donde se hizo la venta
+
++ Aprovecho para presentarles a una pareja de verbos del dplyr: group_by y summarise.
+
++ Y un verbo colado que es filter: Filtra renglones basados en una condición
+
+```{r}
+datos_ventas %>% dplyr::group_by(Estado) %>% dplyr::filter(TiempoCalle > 0) %>%
+  summarise(TiempoCalleMed = median(TiempoCalle),
+            TiempoCalleProm = mean(TiempoCalle),
+            TiempoCalleDesv = sd(TiempoCalle),
+            TiempoCalleMax = max(TiempoCalle)) %>% ungroup()
+```
+
++ Vamos a hacer una grafiquita que nos ayude a entender mejor
+
+```{r}
+datos_ventas %>% group_by(Estado) %>% dplyr::filter(TiempoCalle > 0) %>%
+  summarise(TiempoCalleMed = median(TiempoCalle),
+            TiempoCalleProm = mean(TiempoCalle),
+            TiempoCalleDesv = sd(TiempoCalle),
+            TiempoCalleMax = max(TiempoCalle)) %>% ungroup() %>%
+  ggplot() +
+  #geom_bar(aes(x = Estado, y = TiempoCalleDesv), stat="identity", width=0.5) + 
+  geom_point(aes(x = Estado, y = TiempoCalleMax), color = "red") +
+  coord_flip()
+```
++ Una librería más modesta pero más eficiente es la librería {readr}.
+
++ Puede leer archivos txt, csv, xlsx (sencillos), xls (sencillos)
+
+
+```{r}
+library(readr) # Ampliamos nuestras funciones de lectura de archivos
+library(ggrepel) # Para mejorar unas grafiquitas
+```
+
+```{r}
+data_superstore <- read_csv("Sample - Superstore.csv")
+```
+
+```{r}
+data_superstore
+```
+
+```{r}
+data_superstore |> skim()
+```
+
+```{r}
+data_superstore %>% dplyr::select(`Sub-Category`, Profit) %>% 
+  group_by(`Sub-Category`) %>% 
+  summarise(ganancia = sum(Profit)) %>% 
+  ungroup() %>% 
+  top_n(10, wt = ganancia) %>% 
+  arrange(desc(ganancia)) %>% 
+  mutate(ranking = 10:1)
+```
+
+
+
+```{r}
+data_superstore %>% dplyr::select(`Sub-Category`, Profit) %>% 
+  group_by(`Sub-Category`) %>% 
+  summarise(ganancia = sum(Profit)) %>% 
+  ungroup() %>% 
+  top_n(10, wt = ganancia) %>% 
+  arrange(desc(ganancia)) %>% 
+  mutate(ranking = 10:1) %>%
+  ggplot() + 
+  geom_segment(aes(x = 0, y = ranking, xend = ganancia, yend = ranking),
+               linewidth = 1, color = "lightsalmon") +
+  geom_point(aes(y = ranking, x = ganancia), color = "lightskyblue3") +
+  geom_label(aes(y = ranking, x = ganancia + 5000,
+                 label = `Sub-Category`),
+             color = "dodgerblue4", size = 2) +
+  geom_label(aes(y = ranking, x = ganancia - 4000,
+                 label = scales::dollar(round(as.numeric(ganancia), 2))),
+             color = "blue4", size = 2) +
+  scale_y_discrete(limits=factor(10:1)) +
+  scale_x_continuous(labels = scales::dollar) +
+  theme_light() +
+  xlab("Profit") + ylab("Posición en el ranking") +
+  ggtitle("Top 10 más rentables por categoría")
+```
+
+```{r}
+data_superstore %>% dplyr::select(`Customer Name`, Profit) %>% 
+  group_by(`Customer Name`) %>% 
+  summarise(ganancia = sum(Profit)) %>% 
+  ungroup() %>% 
+  top_n(10, wt = ganancia) %>% 
+  arrange(desc(ganancia)) %>% 
+  mutate(ranking = 10:1) %>%
+  ggplot() + 
+  geom_segment(aes(x = 0, y = ranking, xend = ganancia, yend = ranking),
+               linewidth = 1, color = "lightsalmon") +
+  geom_point(aes(y = ranking, x = ganancia), color = "lightskyblue3") +
+  geom_label(aes(y = ranking, x = ganancia + 1000,
+                 label = `Customer Name`),
+             color = "dodgerblue4", size = 2) +
+  geom_label(aes(y = ranking, x = ganancia - 1000,
+                 label = scales::dollar(round(as.numeric(ganancia), 2))),
+             color = "blue4", size = 2) +
+  scale_y_discrete(limits=factor(10:1)) +
+  scale_x_continuous(labels = scales::dollar) +
+  theme_light() +
+  xlab("Profit") + ylab("Posición en el ranking") +
+  ggtitle("Los 10 clientes más rentables")
+```
+
+```{r}
+datos_por_estado <- data_superstore %>% dplyr::select(State, Profit) %>% 
+  group_by(State) %>% 
+  summarise(ganancia = sum(Profit)) %>% 
+  ungroup() %>% 
+  arrange(desc(ganancia))
+
+n <- nrow(datos_por_estado)
+
+datos_por_estado %>% mutate(ranking = n:1) %>%
+ggplot() + 
+  geom_segment(aes(x = 0, y = ranking, xend = ganancia, yend = ranking),
+               linewidth = 1, color = "lightsalmon") +
+  geom_point(aes(y = ranking, x = ganancia), color = "lightskyblue3") +
+  geom_label(aes(y = ranking, x = ganancia,
+                 label = State),
+             color = "dodgerblue4", size = 2) +
+  scale_y_discrete(limits=factor(n:1)) +
+  scale_x_continuous(labels = scales::dollar) +
+  #theme_dark() +
+  theme_minimal() +
+  #theme_light() +
+  xlab("Profit") + ylab("Posición en el ranking") +
+  ggtitle("Profit por estado")
+```
+
+```{r}
+library(maps)
+```
+
+```{r}
+data_superstore <- readxl::read_xls("Sample - Superstore.xls")
+```
+
+```{r}
+data_superstore |> head()
+```
+
++ Además de {skim} otra de las librerías que nos ayuda a entender la estructura de nuestros datos es {inspectdf}
+
+```{r}
+library(inspectdf)
+```
+
+```{r}
+# Resumen de los NAs
+inspect_na(data_superstore)
+```
+
+```{r}
+data_superstore |> inspect_na() |> show_plot()
+```
+
+```{r}
+data_superstore |> inspect_cat() |> show_plot()
+```
+```{r}
+installed.packages()
+```
+
+
+
+```{r}
+data_superstore |> inspect_cat() |> show_plot()
+```
+
+```{r}
+data_superstore |> inspect_cor() |> show_plot()
+```
+
+```{r}
+data_superstore |> inspect_types()
+```
+
+```{r}
+data_superstore |> inspect_types() |> show_plot()
+```
+
+```{r}
+data_superstore |> inspect_num()
+```
+
+```{r}
+data_superstore |> inspect_num() |> show_plot()
+```
+
+
+```{r}
+data_por_estado <- data_superstore %>% dplyr::select(State, Profit) %>%
+  group_by(State) %>% 
+  summarise(ganancia = sum(Profit)) %>% 
+  ungroup() %>%
+  mutate(region = tolower(State))
+```
+
+```{r}
+MainStates <- map_data("state")
+```
+
+```{r}
+data_por_estado <- data_por_estado %>% inner_join(MainStates, by = "region")
+```
+
+```{r}
+df_para_etiquetas <- MainStates %>% group_by(region) %>% 
+  summarise(long = median(long), lat = median(lat))
+```
+
+
+```{r}
+data_por_estado %>% ggplot() + 
+  geom_polygon(aes(x=long, y=lat, group=group, fill = ganancia), 
+               color="white", linewidth = 0.2) +
+  scale_fill_gradient2(low = "orange", 
+                       mid = "lightskyblue3", high = "dodgerblue4", midpoint = 0) +
+  geom_label_repel(data = df_para_etiquetas, aes(x=long, y=lat, label = region),
+             color = "dodgerblue4", size = 2) +
+  theme_light() +
+  theme(axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        plot.title = element_text(face = "bold", size = 9))
+```
+
+# Bases de datos más estructuradas
+
+```{r}
+library(DBI)
+library(dbplyr)
+library(RSQLite)
+library(Lahman)
+```
+
++ SQLite es un sistema de administración de bases de datos relacionales (RDBMS, Relational Database Management System)
+
++ Es ligero, serverless (sin servidor), self-contained (autónomo) e integrado (embedded)
+
+Se utiliza para el almacenamiento local de datos en aplicaciones, prototipos y proyectos pequeños o medianos
+
+## Ligero (y rápido):
+
++ SQLite está diseñado para ser ligero y eficiente, lo que lo hace ideal para aplicaciones con tráfico bajo o moderado, o para su uso en sistemas integrados.
+
++ Funciona bien para aplicaciones pequeñas, pero puede no ser adecuado para sistemas de alta concurrencia o a gran escala.
+
+## Serverless:
+
++ A diferencia de bases de datos tradicionales como MySQL o PostgreSQL, SQLite no requiere un proceso de servidor separado para funcionar.
+
++ La base de datos se almacena en un solo archivo en el disco, y la biblioteca lee y escribe directamente en ese archivo.
+
+## Self-Contained:
+
++ Es un sistema autónomo, lo que significa que no tiene dependencias externas. Todo el motor de la base de datos está contenido dentro de una sola biblioteca.
+
+## Configuración cero
+
++ No requiere configuración ni administración. No es necesario instalar un servidor, configurar usuarios o administrarar permisos.
+
+## Base de datos en un solo archivo:
+
++ Toda la base de datos (tablas, índices y datos) se almacena en un solo archivo en el disco (por ejemplo, mibasededatos.db). Por lo tanto es muy fácil copiar, mover o compartir la base de datos.
+
+## Adicionales:
+
++ SQLite es multiplataforma y funciona en varios sistemas operativos, incluyendo Windows, macOS, Linux, iOS y Android.
+
++ Admite propiedades ACID (Atomicidad, Consistencia, Aislamiento, Durabilidad), lo que garantiza transacciones confiables incluso en caso de fallos del sistema.
+
++ Es open-source y se publica bajo dominio público, lo que significa que es gratis para cualquier uso sin restricciones de licencia.
+
+# Empecenmos...
+
++ Una de las formas más fáciles es con DBI utilizando la función `dbGetQuery()` 
+
++ Se hace copy/paste de código SQL en la función de R como un string entre comillas
+
++ Esta forma se conoce como pass through SQL code
+
+
+```{r}
+conn <- DBI::dbConnect(RSQLite::SQLite(), "CarsDB.db")
+```
+
+```{r}
+dbListTables(conn)
+```
+
+```{r}
+mtcars |> head()
+```
+
+
+```{r}
+datos <- mtcars
+datos$car_names <- rownames(datos)
+rownames(datos) <- c()
+head(datos)
+```
+
+```{r}
+dbWriteTable(conn, "cars_data", datos)
+```
+
+
+```{r}
+dbListTables(conn)
+```
+
+```{r}
+dbGetQuery(conn, "SELECT * FROM cars_data")
+```
+
+```{r}
+dbGetQuery(conn, "SELECT * FROM cars_data LIMIT 10")
+```
+
+```{r}
+# Obtener los car names y caballos de fuerza (hp) que 8 cilindros
+dbGetQuery(conn,"SELECT car_names, hp, cyl FROM cars_data
+                 WHERE cyl = 8")
+```
+
+
+```{r}
+# Obtener los car names y caballos de fuerza (hp) que empiezan con 'M' y que tienen 6 o 8 cilindros
+dbGetQuery(conn,"SELECT car_names, hp, cyl FROM cars_data
+                 WHERE car_names LIKE 'M%' AND cyl IN (6,8)")
+```
+
+
+
+```{r}
+# Obtener los caballos de fuerza (hp) promedio y millas por galón (mpg) promedio por número de cilindros
+dbGetQuery(conn,"SELECT cyl, AVG(hp) AS 'average_hp', AVG(mpg) AS 'average_mpg' FROM cars_data
+                 GROUP BY cyl
+                 ORDER BY average_hp")
+
+```
+
+```{r}
+resumen <- dbGetQuery(conn,"SELECT cyl, AVG(hp) AS 'average_hp'FROM cars_data
+                 GROUP BY cyl
+                 ORDER BY average_hp")
+```
+
+```{r}
+class(resumen)
+```
+
+```{r}
+autos <- c('Camaro', 'California', 'Mustang', 'Explorer')
+fabricante <- c('Chevrolet','Ferrari','Ford','Ford')
+df1 <- data.frame(autos, fabricante)
+df1
+```
+
+```{r}
+autos <- c('Corolla', 'Lancer', 'Sportage', 'XE')
+fabricante <- c('Toyota','Mitsubishi','Kia','Jaguar')
+df2 <- data.frame(autos, fabricante)
+df2
+```
+
+```{r}
+lista_dfs <- list(df1,df2)
+lista_dfs
+```
+
+
+```{r}
+# Se escribe una nueva tabla haciendo appending de los dataframes de la lista
+for(k in 1:length(lista_dfs)){
+    dbWriteTable(conn,"otros_autos", lista_dfs[[k]], append = TRUE)
+}
+```
+
+```{r}
+dbListTables(conn)
+```
+
+```{r}
+dbGetQuery(conn, "SELECT * FROM otros_autos")
+```
+
++ Podemos parametrizar con objetos de R, las queries
+
+# Lets assume that there is some user input that asks us to look only into cars that have over 18 miles per gallon (mpg)
+# and more than 6 cylinders
+
+```{r}
+# Definimos nuestros parámetros
+millas <-  18
+cilindros <- 6
+mi_df_query <- dbGetQuery(conn,
+                     'SELECT car_names, mpg, cyl FROM cars_data WHERE mpg >= ? AND cyl >= ?',
+                     params = c(millas, cilindros))
+mi_df_query
+```
+
+```{r}
+dbDisconnect(conn)
+```
+
+
+```{r}
+lahman_s <- dbplyr::lahman_sqlite()
+bateo <- tbl(lahman_s, "Batting")
+```
+
+```{r}
+bateo |> class()
+```
+
+
+```{r}
+bateo %>% show_query()
+```
+
+```{r}
+bateo |> dplyr::filter(playerID == "mcguide01")
+```
+
+
+```{r}
+bateo |> dplyr::filter(playerID == "mcguide01") |> show_query()
+```
+
+```{r}
+bateo |> dplyr::filter(playerID == "mcguide01") |>
+  dplyr::select(yearID,R) |>
+  show_query()
+```
+```{r}
+bateo |> dplyr::filter(playerID == "mcguide01") |>
+  mutate(era = if_else(yearID <= 1888, "vieja era", "nueva era")) |>
+  dplyr::select(playerID, yearID, era, teamID) |>
+  show_query()
+```
+
+
+```{r}
+con <- dbConnect(RSQLite::SQLite(), dbname = "titanic.db")
+```
+
+```{r}
+dbListTables(con)
+```
+
+```{r}
+primer_query <- dbGetQuery(con, "SELECT * FROM titanic")
+primer_query
+```
+
+```{r}
+primer_query |> class()
+```
