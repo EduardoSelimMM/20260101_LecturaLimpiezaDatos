@@ -1,0 +1,1146 @@
+---
+title: "Sesión 3"
+author: "Tu nombre"
+date: "21 de febrero de 2026"
+output: html_document
+---
+
++ En la sesión de hoy, trabajaremos con un formato de datos muy popular que se conoce como JSON (se pronuncia yeison).
+
++ Para poder procesarlo en R, usaremos la librería {jsonlite}
+
+```{r}
+#install.packages("jsonlite")
+```
+
+# Introducción a datos en formato JSON
+
++ JSON (JavaScript Object Notation) es un formato de datos ligero que generalmente se utiliza para almacenar e intercambiar información entre sistemas. Es un formato muy versátil. De hecho esa es su principal fortaleza pero tmb su mayor debilidad
+
++ Es "fácil" de leer y escribir para los humanos y sencillo de analizar y generar para las computadoras.
+
++ JSON se usa frecuentemente en aplicaciones web (de allí su popularidad) para transmitir datos entre un servidor y un cliente.
+
++ Y al mundo le gusto este formato y decidió usarlo.
+
++ Tiene un parecido muy alto con los diccionarios de Python (no estoy claro históricamente quienes aparecieron primero) :(
+
+## Características principales de JSON
+
++ Usa parejas clave-valor (llave-valor o key-value)... como en los diccionarios de Python: Los datos se almacenan en pares de clave y valor (similar a los diccionarios en Python).
+
++ Ligero y legible: Es "fácil" de entender y adecuado para la transmisión de datos.
+
++ IMPORTANTE - Independiente del lenguaje de programación: Aunque se basa en la sintaxis de JavaScript, JSON se puede utilizar con muchos lenguajes de programación (como R, Python, Java, C#, etc.). También por eso en muy popular
+
++ Característica más importante: soporta estructuras **anidadas** i.e. JSON puede representar datos complejos con arreglos y objetos. Es decir, con JSON se puede representar datos no necesariamente tabulares... Esta es su mayr ventaja pero tmb su mayor desventaja.
+
++ Puede llevarte al infierno: Las ventajas de flexibilidad, eventualmente se convierten en su mayor desventaja, al tener datos almacenados sin ninguna estructura... y eso eventualmente me jugará en contra.
+
++ Organizar los datos en tablas es mucho más natural para los humanos, pero eso requiere un diseño previo. Cuántas tablas, cómo se relacionarán las tablas, etc. Básicamente todo lo que hace SQL
+
++ En JSON, como se puede almacenar datos sin necesariamente pensar en sus estructura entidad-relación, uno guarda y guarda pero luego no encuentra lo que guardó.
+
++ Se escribe un archivo JSON con cierta información (la que queramos nosotros) y se comparte ese archivo para que alguien lo analice y/o guarde en algún esquema de datos (bases de datos) para su consumo.
+
++ Son archivos que se suelen escribir una única vez. Lo común es recibir cada archivo y procesarlo para llevarlo a un sistema de bases de datos hecho y derecho.
+
++ Lleva a entender los elementos básicos de MongoDB (o DocumentDB) que es un framework de bases de datos NoSQL que almacena datos en documentos similares a JSON (en formato BSON).
+
++ Así se puede ver un registro ("renglón") en formato JSON
+
+```
+[{
+  "nombre": "Juan Pérez",
+  "edad": 30,
+  "es_estudiante": false,
+  "cursos": ["Matemáticas", "Biología", "Historia"],
+  "direccion": {
+    "calle": "Calle Principal 123",
+    "ciudad": "CDMX",
+    "codigo_postal": "10001"
+  }
+}]
+```
+
++ Podríamos ir guardado estructura JSON, dentro de JSON para ir guardando diferentes datos sin ningún problema aparente.
+
+Otro registro, que está relacionado con el anterior, puede ser
+
+```
+{
+  "nombre": "Selena Gómez",
+  "edad": 19,
+  "es_estudiante": true,
+  "cursos": ["Matemáticas", "Ciencias", "Literatura", "Inglés"],
+  "direccion": {
+    "ciudad": "NYC",
+  },
+  "ocupacion": "cantante"
+}
+```
+
++ Obs: Entre Selena Gómez y Juan Pérez hay varias diferencias: ambos han llevado materias pero no las mismas ni la misma cantidad. Otra diferencia este que de Juan Pérez tengo en su dirección la calle, la ciudad y el CP, de Selena Gómez sólo tengo la ciudad. Además de Juan Pérez no tengo su ocupación pero de Selena Gómez sí. Y ambos registros quiero que coexistan en una misma estructura de datos.
+
++ Estos dos objetos JSON tiene una estructura parecida pero no idéntica.
+
++ Con este par de registros sencillos, nos damos cuenta que meterlos en una tabla (como estamos acostumbrados) no sería sencillo.
+
++ La idea de esta sesión es trabajar con este formato en R.
+
+```{r}
+library(dplyr) # Grámatica de dataframes
+library(jsonlite) # Para trabajar con JSON
+```
+
++ La librería {jsonlite} tiene funciones que actúan como parsers (o generadores) de JSON, optimizadas.
+
++ Es decir, podremos pasar de formato JSON a dataframes, matrices, vectores... PERO SÓLO CUANDO SE PUEDA
+
++ Su principal ventaja es que implementa un mapeo bidireccional entre los datos JSON y los tipos de datos más importantes en R... en este caso dataframes, vectores y matrices
+
++ Es decir, se podrá convertir entre objetos de R y JSON sin pérdida de tipo o información, y sin necesidad de TANTA manipulación manual de datos.
+
++ Es el precio que tenemos que pagar por tan poca estructura (i.e. mucha flexibilidad) en los datos, i.e. no vamos a poder procesar todo fácilmente
+
++ Esto es ideal para interactuar con APIs web o para construir pipelines de datos donde las estructuras de datos fluyen hacia y desde R utilizando JSON.
+
++ Veamos algunos ejemplos..
+
+```{r}
+# Voy a crear como un string de R, varios registros tipo JSON
+json <-
+'[
+  {"Nombre" : "Mario", "Edad" : 32, "Ocupacion" : "Plumber"}, 
+  {"Nombre" : "Peach", "Edad" : 21, "Ocupacion" : "Princess"},
+  {},
+  {"Nombre" : "Bowser", "Ocupacion" : "Koopa"}
+]'
+```
+
++ En este JSON tenemos 4 registros: Uno vacío, y otro que tiene menos info que el resto
+
++ Este JSON está muy sencillito, lo podemos convertir a dataframe de R... esto lo haremos con la función `fromJSON()`
+
+```{r}
+df <- json |> jsonlite::fromJSON()
+
+df
+```
++ Y ya en formato dataframe podemos usar todo lo que sabemos de dataframe para explotar estos datos.
+
++ Observen que mapea los registros como renglones i.e. como estamos acostumbrados en formato tabla
+
++ Por supuesto, también podemos pasar de dataframe de R a JSON con la función `toJSON()`
+
+```{r}
+df |> jsonlite::toJSON(pretty=TRUE)
+```
++ Vamos a convertir otro DataFrame de R en JSON
+
+```{r}
+mtcars |> head(n = 12) |> jsonlite::toJSON(pretty=TRUE)
+```
+
+
++ Otra aplicación común es recibir matrices en este formato
+
+```{r}
+# como objeto tipo string tengo los renglones de una matriz 
+json <- '[
+  [1, 2, 3, 4],
+  [5, 6, 7, 8],
+  [9, 10, 11, 12]
+]'
+```
+
++ De nuevo con nuestra función fromJSON
+
+```{r}
+library(jsonlite)
+```
+
+
+```{r}
+formato_matriz <- fromJSON(json)
+formato_matriz
+```
+
++ El tipo de objeto que tiene formato_matriz es
+
+```{r}
+formato_matriz |> class()
+```
+```{r}
+formato_matriz |> str()
+```
+
++ Y al revés, i.e. de matriz de R a JSON
+
+```{r}
+formato_matriz |> jsonlite::toJSON(pretty=TRUE)
+```
+
++ Para resumir de alguna manera:
+
+  + Arreglo de primitivos, i.e. puros valores sin clave/llave/key
+
+```
+["Amsterdam", "Rotterdam", "Utrecht", "Den Haag"]
+```
+
+fromJSON() lo lleva a un vector atómico de R con el argumento `simplifyVector = TRUE`
+
+```{r}
+'["Amsterdam", "Rotterdam", "Utrecht", "Den Haag"]' |> fromJSON(simplifyVector = TRUE)
+```
++ Me lo regresa como un vector de R.
+
++ A un JSON tan sencillo como este ["Amsterdam", "Rotterdam", "Utrecht", "Den Haag"] se le conoce como atómico
+
+```{r}
+'["Amsterdam", "Rotterdam", "Utrecht", "Den Haag"]' |> fromJSON(simplifyVector = TRUE) |>
+  class()
+```
+
++ Arreglo de objetos, i.e. aquí sí hay llaves-valor
+
+```
+[{"name":"Erik", "age":43},
+{"name":"Anna", "age":32},
+{"name":"Jorge", "sex":"hombre"}]
+```
+
+fromJSON lo lleva a un Dataframe de R con el argumento `simplifyDataFrame = TRUE`
+
+```{r}
+'[{"name":"Erik", "age":43}, {"name":"Anna", "age":32}, {"name":"Jorge", "sex":"hombre"}] ' |>
+  fromJSON(simplifyDataFrame = TRUE)
+```
++ Con simplifyDataFrame = FALSE me regresa en vez de un Dataframe de R, me regresa una lista de R
+
+```{r}
+'[{"name":"Erik", "age":43}, {"name":"Anna", "age":32}, {"name":"Jorge", "sex":"hombre"}] ' |>
+  fromJSON(simplifyDataFrame = FALSE)
+```
+
++ Arreglo de arreglos, i.e. no hay llaves sólo arreglos
+
+```
+[ [1, 2, 3], [4, 5, 6] ]
+```
+
+fromJSON lo lleva hacia una matriz de R con el argumento `simplifyMatrix = TRUE`
+
+```{r}
+'[ [1, 2, 3], [4, 5, 6] ]' |> fromJSON(simplifyMatrix = TRUE)
+```
+
+```{r}
+'[ [1, 2, 3], [4, 5, 6] ]' |> fromJSON(simplifyMatrix = FALSE)
+```
+
++ Se puede poner feo el asunto. Nuestra intención es que en el siguiente ejemplo se construya una matriz, pero el JSON no alcanza a rellenar las entradas.
+
+```{r}
+'[ [1, 2, 3], [4, 5, 6], [7,8] ]' |> fromJSON(simplifyMatrix = TRUE)
+```
+
++ Aunque le puse que lo simplifique, la estructura faltante no le da suficiente info para verla como matriz
+
++ Como me falta una entrada en el tercer renglón, no alcanza a convertirlo a matriz, sólo llega a converto a lista
+
++ Se puede poner feo de otras maneras
+
+```{r}
+'[ [1, 2, 3], [4, 5, 6], [7, "8", 9] ]' |> fromJSON(simplifyMatrix = TRUE)
+```
+
++ El intruso "8" nos vuelve todo en matriz de strings.
+
++ Otro ejemplo muy común pero que viene en formato diferente, básicamente en formato de arreglo
+
+```{r}
+json <-
+'{ 
+   "ID":["1","2","3","4","5"],
+   "Name":["Alejandra","Esteban","Susana","Julian","Karina"],
+   "Salary":["722.5","815.2","1611","2829","843.25"],
+   "StartDate":["6/17/2014","1/1/2012","11/15/2014","9/23/2013","5/21/2013"],
+   "Dept":["IT","IT","HR","Operations","Finance"],
+   "Hand":["left","left","right","right","both"]
+}'
+```
+
++ Este es un formato diferente que nos sugiere 6 columnas: ID, NAme, Salary, StartDate, Dept y Hand, y 5 renglones
+
+```{r}
+json |> jsonlite::fromJSON()
+```
++ Me regresó una lista, me falta convertirlo en dataframe de R. Le tengo que agregar un paso adicional
+
+```{r}
+json |> jsonlite::fromJSON() |> as.data.frame()
+```
+
++ y por fin obtuvimos el formato de tabla que nuestra intuición quería.
+
++ Sigue "descompuesto" el formato de las columnas Salary y Date, pero como esto ya es un dataframe, ya podemos usar nuestros super poderes de dataframe para arreglarlo.
+
++ Pasemos a un ejemplo muchísisisisisimo más complicado
+
++ Aprovecho para comentarle que la función fromJSON también admite una URL [dirección web] para obtener los datos de algún sitio web... por supuesto en formato JSON
+
+```{r}
+url <- "https://data.ny.gov/api/views/9a8c-vfzj/rows.json?accessType=DOWNLOAD"
+datos_descargados <- fromJSON(url)
+```
+
++ Estos datos vienen de la página:
+https://data.ny.gov/Economic-Development/Retail-Food-Stores/9a8c-vfzj/about_data
+
++ Esta API es de lo más noble, no requiere autorización, ni configuración previa para el acceso.
+
++ Viendo el panel de datos de RStudio me dice que es una lista grande "Large list" (de 16.9 MB) y dos elementos.
+
++ Acuérdense que R guarda sus objetos en memora RAM y por tanto 16.9 MB le parece grande.
+
++ Veamos que tipo de objeto es este
+
+```{r}
+datos_descargados |> class()
+```
+
++ Ahh!! Es una lista. Ya se todo sobre listas de R. Lalo: ja-ja-ja
+
++ Cool!! Hasta el momento todo bien
+
++ Veamos sus entradas...
+
++ De manera muy inocente, le quiero dar un vistazo a los primero dos registros
+
+```{r}
+datos_descargados |> head(n=2)
+```
++ Sólo de ver este output, me huele a que hay JSONs dentro JSONs anidados.
+
++ Ni siquiera me atrevo a intentar entender el primer elemento de la lista (que son metadatos) pues un JSON con JSONs adentro, con JSONs adentro....
+
++ Centraré mi atención en el segundo elemento.
+
++ Puedo utilizar la sintaxis [.]
+
+```{r}
+datos_descargados[2]
+```
+
++ Este segundo elemento tiene datos reales (no metadatos)
+
++ Voy a acceder a la componente que se llama 'data' de esta lista de R que acabo de ver con mis ojos.
+
+```{r}
+datos_descargados[['data']] |> str()
+```
++ Es decir, una matriz de strings de 24,281 renglones y 24 columnas
+
++ Voy a asignar esta matriz a un objeto
+
+```{r}
+subcjto <- datos_descargados[['data']]
+```
+
++ De qué tipo es este objeto?
+
+```{r}
+subcjto |> class()
+```
+
++ ¿Este objeto que no es mío [desconozco mucho de su estructura] traerá nombres?
+
+```{r}
+subcjto |> names()
+```
+
++ Si esto es una matriz de R, me gustaría ver su columna 14 por ejemplo
+
+```{r}
+subcjto[,14]
+```
+
+```{r}
+subcjto[,14] |> class()
+```
++ Ya sabíamos que era un vector de caracteres
+
++ Vamos a convertir esta matriz en un dataframe de R. Para intentar explorarlo
+
+```{r}
+subcjto |> as.data.frame()
+```
+
++ Vamos a seleccionar algunas columnas columnas de este dataframe
+
+```{r}
+df_negocios <- subcjto |> as.data.frame() |> dplyr::select(V1, V9:V14, V16, V19, V20)
+```
+
++ Veamos un vistazo de este nuevo dataframe
+
+```{r}
+df_negocios |> head()
+```
+
++ Vamos a analizar un poquito más la columna V20
+
+```{r}
+df_negocios |> dplyr::select(V20) |> unique()
+```
+
++ En la columna V20 cada entrada tiene el valor "NY"
+
++ Vamos a entender un poco mejor la columna V9
+
+```{r}
+df_negocios |> dplyr::select(V9) |> unique()
+```
+
++ Me huele a que es una especie de columna que indica los counties (no es mi intución alguno de ustedes me ayudó).
+
++ Veamos la columna V19
+
+```{r}
+df_negocios |> dplyr::select(V19) |> unique()
+```
+
++ Me huele a que trae info del boroughs
+
++ Intentemos entender la columna V11
+
+```{r}
+df_negocios |> dplyr::select(V11) |> unique()
+```
+
++ Todo renglón toma el valor "Store"
+
+```{r}
+df_negocios |> dplyr::select(V12) |> unique()
+```
+
++ Vamos a entender la columna V9
+
+```{r}
+library(dplyr)
+```
+
+
+```{r}
+df_negocios |> dplyr::group_by(V9) |> 
+  summarise(conteo = n()) |>
+  ungroup() |>
+  dplyr::arrange(desc(conteo))
+```
+
++ Estamos viendo cuántas tiendas se tienen registradas en cada county
+
++ Vamos a intentar entender las columnas V9 y V19 al mismo tiempo
+
+```{r}
+df_negocios |> dplyr::group_by(V19,V9) |> 
+  summarise(conteo = n()) |> 
+  ungroup() |>
+  dplyr::arrange(desc(conteo))
+```
+
++ Vamos a agrupar sólo por V9 y hacer el mismo conteo
+
+```{r}
+df_negocios |> dplyr::select(V9, V19) |> 
+  dplyr::group_by(V9) |> 
+  summarise(conteo = n()) |> 
+  ungroup() |> 
+  dplyr::arrange(desc(conteo))
+```
+
+```{r}
+datos_descargados[["meta"]][["view"]][["columns"]][["fieldName"]]
+```
+
+
+```{r}
+# Si no quieren abrir la vista dando doble click
+#View(datos_descargados)
+```
+
+## Vamos a trabajar con otros datos
+
++ Primero vamos a borrar los objetos que tenemos en memoria con la escobita
+
++ La siguiente forma de obtener datos de este tipo es que alguien nos pase un archivo .json
+
++ Vamos a ocupar la función read_json
+
+```{r}
+datos <- jsonlite::read_json("datos_prueba.json")
+```
+
++ Este también es un objeto de gran tamaño (según las capacidades de memoria RAM de Posit Cloud gratuito)
+
++ Vamos a ver qué tipo de objeto es este
+
+```{r}
+datos |> class()
+```
+
++ Es una lista de R, i.e. ya lo puedo procesar en R. Pero puede ser una lista complicada.
+
+```{r}
+#datos |> str()
+```
++ Sólo entender e imprimir la estructura de este archivo json le costó trabajo a R. Están muy muy muy muy anidados los datos en este JSON.
+
++ De manera inocente si quisiera saber la dimensión
+
+```{r}
+datos |> dim()
+```
+
+```{r}
+datos |> head(n = 2)
+```
+
++ Sólo de ver los primeros dos registros se nos trabó el asunto
+
++ Voy a borrar el objeto y lo voy a re-leer
+
+```{r}
+datos <- jsonlite::read_json("datos_prueba.json")
+```
+```{r}
+datos_df <- jsonlite::read_json("datos_prueba.json", simplifyVector = TRUE)
+```
+
++ Sólo de ver la descripción que me muestra el área de Enviroment de RStudio puedo ver que es un "Large list (131 elements, 7.6 MB)"
+
++ Es un objeto grande y complicado... Entonces respiremos pues procesarlo no será fácil
+
++ Veamos cuáles son los nombres de estos elemenos
+
+```{r}
+names(datos)
+```
+
++ ¿Cómo que nulo? Si me estás diciendo que es una lista grande.. ouch... El formato es "feito"
+
++ Veamos qué pasa
+
+```{r}
+datos |> class()
+```
+
++ Pues sí una lista, ¿cuál será el problema?
+
++ Ya nos hemos fans de la función str() (structure) porque nos da información de los objetos en general
+
+```
+datos |> str()
+```
+
++ Ejecutarla antes nos cuasó un dolor de cabeza
+
++ Pffff!! Lo ejecuté y me empezó a mandar un montón de info... de hecho hasta detuve la ejecución... Pues me dió tanta info que en realidad se convirtió en nada de info.
+
++ Veamos qué dimensiones tiene este objeto
+
+```{r}
+datos |> dim()
+```
+
++ Me dice que no tiene dimensión, pues claramente esto NO es una tabla
+
++ La "ñera" veamos un mini extracto también nos trabó la compu y/o PositCloud
+
+```
+datos |> head(n = 2)
+```
+
++ Upssss.. Podemos ver que la info tiene nada de estructura. Hay listas dentro de listas (JSONs dentro de JSONs)
+
++ Voy a intentar leer los datos de otra manera, voy a "forzárlo" a que tenga un poquito de forma de tabla con argumento `simplifyVector = TRUE`
+
+```{r}
+library(jsonlite)
+```
+
+```{r}
+datos_df <- read_json("datos_prueba.json", simplifyVector = TRUE)
+```
+
++ Veamos qué tipo de objeto es este
+
+```{r}
+datos_df |> class()
+```
+
++ Uff!! Ya al menos es un data frame
+
++ Veamos un poquito de su estructura
+
+```
+datos_df |> str()
+```
++ De nuevo, me regresa tanta info que es nada de info
+
++ Veamos un extracto de este objeto
+
+```{r}
+datos_df |> head()
+```
+
++ Podemos observar que algunas de las columnas están formadas por "objetos elementales" (i.e. un solo número, un solo string, un solo booleano) pero otras tiene objetos más complicados i.e. los elementos que componen una columna son dataframes, listas, o vectores!!!
+
++ Es decir, hay algunas "celdas" (haciendo analogía con una tabla de EXCEL) son objetos con más estructura en sí mismos
+
+```{r}
+datos_df |> dim()
+```
+
++ Pero algunas columnas son mounstrosas
+
++ Sí tenemos el atributo dimensión. Esto algo bueno
+
++ Veamos que variables están compuestas por listas
+
+```{r}
+# Sólo me traigo columnas que en sus "celdas" tiene listas
+datos_df |> dplyr::select(where(is.list)) |> head()
+```
+
++ Podemos ver que algunas variables están compuestas por dataframes (con contenido o nulos) y algunas otras están compuestas por vectores (con contenido o nulos)
+
++ Vamos con calma
+
++ Exploremos un poquito la primera columna, que me dice que está  formada de data frames
+
++ Veamos lo que hay en la "celda" (1,"F_liv")
+
+```{r}
+datos_df$F_liv[1]
+```
+
++ En la "celda" (1,"F_liv") vive un dataframe de 1 renglón y 2 columnas
+
++ Veamos lo que hay en la "celda" (5,"F_liv")
+
+```{r}
+datos_df$F_liv[5]
+```
+
++ Esta "celda" contiene un dataframe con dos columnas y 4 renglones
+
++ Veamos lo que hay en la "celda" (1,"E18_months_no_water")
+
+```{r}
+datos_df$E18_months_no_water[1]
+```
++ No hay nada. Sólo está "estorbando" (digo estorbar porque complica la estructura del JSON pero no me proporciona información)
+
++ Veamos lo que hay en la "celda" (2,"E18_months_no_water")
+
+```{r}
+datos_df$E18_months_no_water[2]
+```
+
+```{r}
+datos_df$E18_months_no_water[2] |> class()
+```
++ Veamos lo que hay en la "celda" (2,"E_yes_group")
+
+```{r}
+datos_df$E_yes_group[2]
+```
+
++ Hay un dataframe que tiene un par de columnas que tienen listas adentros
+
++ Qué pesadilla!!!
+
++ Dado que está muy complicado entender todos los "renglones" de esta tabla vamos a intentar entender sólo el primero
+
+```{r}
+datos_df |> head(n=1) |> jsonlite::toJSON(pretty=TRUE)
+```
+
++ Sólo el primer renglón está super anidado
+
++ Hay tanta tantos datos desordenados que en realidad NO NO NO NO NO hay información
+
++ ¿Qué harían en este caso?
+
++ Mandarla con el Ingeniero de Bases de Datos a que me convierto esto en un esquema relacional, i.e. de tablas
+
++ Esto quiere decir que no es un problema para el que ustedes estén 100% capacitados... se deben dejar ayudar
+
++ MORALEJA: No que R no pueda procesar este tipo de archivos. Esta tan desordenados que necesita que le demos más información. Esquema relacional.
+
+
+## Introducción a la limpieza de texto
+
++ Voy a borrar los objeto en memoria con la escobita
+
++ Una de las librerías más populares para hacer limpueza de texto en R es {stringr}
+
+```{r}
+library(stringr)
+```
+
++ Limpieza de texto es analizar y limpiar datos en forma de string
+
+```{r}
+mi_string <- "Ejemplo de STRING, con caraceteres varios (12, 15 y 10.2)?!"
+
+mi_string
+```
+
++ Este string tiene letras mayúsuculas, minúsculas, signos especiales, signos acentuados...
+
++ Una operación muy sencilla es convertir todo el string a minúscula con tolower()
+
+```{r}
+(string_en_minuscula <- tolower(mi_string))
+```
+
+Como escribí la sentencia anterior, es lo mismo
+
+```{r}
+string_en_minuscula <- tolower(mi_string)
+string_en_minuscula
+```
+
++ Los paréntesis que envuelven a toda la sentencia hacen que cree el objeto y lo imprima al mismo tiempo
+
++ Otra función que ya hemos visto es pegar strings... paste()
+
+```{r}
+mi_string
+```
+
+```{r}
+otro_string <- "Wow, tengo más que decir!!"
+paste(mi_string, otro_string, sep = " ")
+```
+
++ Le puedo decir que me los pegue con otro caracter si es que quiero diferenciarlos
+
+```{r}
+paste(mi_string, otro_string, sep = "@@@@")
+```
+
+```{r}
+paste(mi_string, otro_string, sep = "SEPARACION")
+```
+
+```{r}
+paste(mi_string, otro_string, sep = "--")
+```
+
++ Hay una función hermana de paste() (que ya también habíamos visto antes), que es paste0()
+
+```{r}
+paste(mi_string, otro_string)
+```
+
+```{r}
+paste0(mi_string, otro_string)
+```
+
++ paste0 los pega uno tras otro sin un espacio de por medio.
+
++ Hay string más "complicados"
+
+```{r}
+mi_string <- "Ejemplo de STRING,      con caraceteres varios (12, 15 y 10.2)?!"
+
+mi_string
+```
+
++ En este string no sólo tengo espacios entre las palabras (que es muy natural) sino tmb tengo una sucesión de espacios en blanco
+
++ Primero vamos a extraer todas las palabras de la cadena con la función str_split
+
+```{r}
+# pattern = " " significa que un espacio es el separador de las palabras
+stringr::str_split(string = mi_string, pattern = " ")
+```
+
++ Ojo me dice que hay espacios en blanco "extra" (las entradas 4, 5, 6, 7 y 8 del resultado anterior)
+
++ Puedo evitar esto con el argumento `pattern = boundary("word")` i.e. separalo por palabras "verdaderas"
+
+```{r}
+stringr::str_split(string = mi_string, pattern = boundary("word"))
+```
+
++ También me quitó ?, ! (,)
+
++ También podemos contar las palabras `str_count`
+
+```{r}
+stringr::str_count(string = mi_string, pattern = " ")
+```
+
++ ¿Realmente tiene 14 palabras? NO.. hay que estorban
+
+```{r}
+mi_string
+```
+
+```{r}
+stringr::str_count(string = mi_string, pattern = boundary("word"))
+```
+
++ Esto cuenta las palabras "legítimos"
+
++ Se puede separar con más "gracia"
+
+```{r}
+fruits <- c(
+  "apples and oranges and pears and bananas",
+  "pineapples and mangos and guavas"
+)
+```
+
+```{r}
+fruits |> stringr::str_split(pattern = " and ")
+```
+
++ En este caso me devolvió una lista con dos entradas (una por cada entrada vector original)
+
+```{r}
+fruits |> stringr::str_split(pattern = " and ", simplify = TRUE)
+```
+
++ Con simplify = TRUE, le digo que el output me lo de en forma de matriz. Por supuesto esto tiene sus pros y sus contras.
+
++ Vamos a imprimir el objeto original
+
+```{r}
+fruits
+```
+
+
+```{r}
+fruits |> stringr::str_split(pattern = " and ", n = 3)
+```
+
+```{r}
+fruits |> stringr::str_split(pattern = " and ", n = 2)
+```
+
+```{r}
+fruits |> stringr::str_split(pattern = " and ", n = 5)
+```
+
++ También le puedo decir que me las devuelva en un formato fijo i.e matriz
+
+```{r}
+fruits |> stringr::str_split_fixed(pattern = " and ", n = 3)
+```
+
+```{r}
+fruits |> stringr::str_split_fixed(pattern =" and ", n = 5)
+```
++ En este caso, me regreso la columna 5 "vacía"
+
+
+```{r}
+fruits
+```
+Le puedo decir que sólo me de la primea palabra de cada entrada
+
+```{r}
+fruits |> stringr::str_split_i(pattern = " and ", i = 1)
+```
+
++ Le puedo decir que me de la 4ta palabra de cada string
+
+```{r}
+fruits |> stringr::str_split_i(pattern = " and ", i = 4)
+```
++ La segunda palabra de cada string
+
+```{r}
+fruits |> stringr::str_split_i(pattern = " and ", i = 2)
+```
+
++ Con el "-" empieza de atrás para adelante
+
+```{r}
+fruits
+```
++ Las últimas palabras de cada string
+
+```{r}
+# La última palabra de cada string
+fruits |> stringr::str_split_i(pattern = " and ", i = -1)
+```
+
+```{r}
+# Las penúltimas palabras de cada string
+fruits |> stringr::str_split_i(pattern = " and ", i = -2)
+```
+
++ Otra situación común cuando se trabaja con strings son las reglas idiomáticas
+
+```{r}
+infierno_de_i <- c("istanbul", "İzmar", "Istanbul", "izmar", "\u0130")
+infierno_de_i
+```
++ Tengo varias formas de la letra "i"
+
++ ¿Todas son "i" legítimas? ocuparemos la función str_detect
+
+```{r}
+stringr::str_detect(infierno_de_i, pattern = coll("i", TRUE))
+```
+
+coll: Función se utiliza para "collation" (algo así como cotejo o compaginación), que es una forma de comparar strings teniendo en cuenta reglas específicas de la configuración regional (por ejemplo, sensibilidad a mayúsculas y minúsculas, orden de caracteres, etc.).
+
+TRUE: Este argumento especifica que la búsqueda debe ser sensible a mayúsculas y minúsculas. Si fuera FALSE, la búsqueda sería insensible a mayúsculas y minúsculas.
+
+```{r}
+infierno_de_i
+```
+
+```{r}
+stringr::str_detect(infierno_de_i, coll("i", TRUE, locale = "tr"))
+```
+
+locale = "tr", especifica la configuración regional que se utilizará para la collation. La configuración regional "tr" se refiere al turco. En turco, la letra "i" tiene un comportamiento especial en cuanto a la sensibilidad a mayúsculas y minúsculas (por ejemplo, la versión en mayúscula de "i" es "İ", y la versión en minúscula de "I" es "ı").
+
+```{r}
+infierno_de_i
+```
+
+```{r}
+stringr::str_detect(infierno_de_i, fixed("i", TRUE))
+```
+
+```{r}
+stringr::str_detect(infierno_de_i, fixed("İ", TRUE))
+```
+
+Con fixed se especifica que el patrón debe tratarse como un string fijo (i.e. no como una expresión regular). Esto significa que los caracteres especiales en el patrón se interpretan literalmente, no como metacaracteres de regex.
+
+```{r}
+mi_string
+```
+
+```{r}
+str_split(mi_string, pattern = "!")
+```
+
+```{r}
+str_split(mi_string, pattern = "!")[[1]]
+```
+
+```{r}
+mi_string_en_vector <- str_split(mi_string, pattern = "!")[[1]]
+```
+
+
+```{r}
+grep(pattern = "\\?", x = mi_string_en_vector)
+```
+
+```{r}
+stringr::str_replace_all(mi_string, "e","@@")
+```
+
+```{r}
+stringr::str_extract_all(mi_string,"[0-9]+")
+```
+```{r}
+stringr::str_extract_all(mi_string,"[?]+")
+```
+
+
+```{r}
+str_extract_all(mi_string, "[a-z]+")
+```
+
+```{r}
+str_extract_all(mi_string, regex("[a-z]+", TRUE))
+```
+
+```{r}
+mi_vector <- c("123 grapes", "apples x4", "bag of flour",
+               "kiwi and lime", "Bag of sugar", "milk x2")
+```
+
+```{r}
+str_extract(mi_vector, "\\d")
+```
+
+```{r}
+str_extract_all(mi_vector, "\\d")
+```
+
+```{r}
+str_extract(mi_vector, "[a-z]+")
+```
+
+```{r}
+str_extract(mi_vector, "[a-z]{1,4}")
+```
+
+```{r}
+str_extract(mi_vector, "[a-z]{1,3}")
+```
+
+```{r}
+str_extract(mi_vector, "[a-z]{1,8}")
+```
+
+```{r}
+str_extract(mi_vector, "\\b[a-z]+\\b")
+```
+
+Es un boundary (más en específico, un word boundary); hace que el match ocurra al inicio o al final de una palabra
+
+```{r}
+str_extract(mi_vector, "\\b[a-z]+")
+```
+
+```{r}
+str_extract(mi_vector, "[a-z]+\\b")
+```
+
+```{r}
+str_extract(mi_vector, regex("[a-z]+\\b", TRUE))
+```
+
+```{r}
+str_extract(mi_vector, "([a-z]+) of ([a-z]+)")
+```
+
+```{r}
+str_extract(mi_vector, "([a-z]+) of ([a-z]+)", group = 1)
+```
+
+```{r}
+str_extract(mi_vector, "([a-z]+) of ([a-z]+)", group = 2)
+```
+
+## Una aplicación un poquito más común
+
++ Aprovecho para contarles que tmb podemos leer archivos ".txt" con la función read.delim 
+
+```{r}
+mi_texto <- read.delim("ObamaSpeech.txt", header = FALSE)
+```
+
+```{r}
+mi_texto |> str()
+```
+```{r}
+mi_texto |> head()
+```
+
+
+
+```{r}
+library(quanteda)
+library(quanteda.textplots)
+```
+```{r}
+mi_texto[1,1]
+```
+
+
+```{r}
+mi_texto[1,1] |> corpus() |> summary()
+```
+
+```{r}
+mi_texto[1,1] |> quanteda::tokens() |>
+    dfm()
+```
+
+```{r}
+mi_texto[17,1]
+```
+
+```{r}
+mi_texto[17,1] |> quanteda::tokens() |>
+    dfm()
+```
++ En análisi de texto es importante quita las palabras que no tienen significado en sí mismo: stopwords
+
+```{r}
+head(stopwords("en"), 20)
+```
+
+```{r}
+head(stopwords("ru"), 10)
+```
+
+```{r}
+head(stopwords("it"), 10)
+```
+
+```{r}
+head(stopwords("es"), 10)
+```
+
++ Voy a quitar estas palabras "sin significado"
+
+
+```{r}
+mi_texto[17,1] |> quanteda::tokens() |> 
+  tokens_remove(stopwords("en")) |>
+  dfm()
+```
+
+
+```{r}
+primera_frase <- "This is $10 in 999 different ways,\n up and down; left and right!"
+
+segunda_frase <- "@koheiw7 working: on #quanteda 2day\t4ever, http://textasdata.com?page=123."
+```
+
+
+```{r}
+texto_completo <- c(text1 = primera_frase,
+                    text2 = segunda_frase,
+                    text3 = mi_texto[17,1],
+                    text4 = mi_texto[27,1],
+                    text5 = mi_texto[37,1],
+                    text6 = mi_texto[47,1],
+                    text7 = mi_texto[57,1],
+                    text8 = billboard::lyrics[5,"lyrics"])
+```
+
+```{r}
+texto_completo |> quanteda::tokens()
+```
+
+
+```{r}
+texto_completo |> quanteda::tokens () |>
+  tokens_remove(stopwords("en")) |>
+  dfm() |> textplot_wordcloud(min_count = 2)
+```
+
+```{r}
+texto_completo |> quanteda::tokens(remove_numbers = TRUE,
+                                   remove_punct = TRUE,
+                                   remove_separators = TRUE) |>
+  dfm() |> textplot_wordcloud()
+```
+
+```{r}
+texto_completo |> quanteda::tokens(remove_numbers = TRUE,
+                                   remove_punct = TRUE,
+                                   remove_separators = TRUE) |>
+  tokens_remove(stopwords("en")) |>
+  dfm() |> textplot_wordcloud()
+```
