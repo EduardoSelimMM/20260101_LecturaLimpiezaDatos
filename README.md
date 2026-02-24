@@ -13,3 +13,4 @@
 - [Sesion 1: 17 de febrero de 2026](./sesion01): 18:00 a 20:00 hrs.
 - [Sesion 2: 19 de febrero de 2026](./sesion02): 18:00 a 20:30 hrs + 30 mins, i.e. 18:00 a 21:00 hrs
 - [Sesion 3: 21 de febrero de 2026](./sesion03): 30 mins + 9:30 a 12:00 hrs, i.e. 9:00 a 12:00 hrs.
+- [Sesion 4: 24 de febrero de 2026](./sesion04): 18:00 a 20:00 hrs.
