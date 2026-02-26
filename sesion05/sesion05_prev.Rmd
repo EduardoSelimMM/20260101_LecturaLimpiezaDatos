@@ -147,21 +147,32 @@ mtcars %>%
   adorn_title()
 ```
 
-```{r}
-get_dupes(mtcars, wt, cyl)
-```
++ Otra función útil, es saber si ya renglones duplicados
 
 ```{r}
-get_dupes(datos_ventas, id_venta)
+get_dupes(dat = mtcars)
 ```
 
++ Este dataset completo tiene sus renglones diferentes todos
 
-get_one_to_one(): Esta función muestra que columnas (si es que las hay)
-tienen relaciones uno a uno entre sí.
++ Pero también podemos saber si hay idénticos restringiéndonos a algunas columnas
+
++ Por ejemplo, estamos preguntándole si hay dos rengloncitos idénticos sólo considerando los variables wt y cyl
 
 ```{r}
-library(dplyr)
+get_dupes(dat = mtcars, wt, cyl)
 ```
+
++ Un uso común es para verificar si la columna que creemos que es un ID efectivamente lo es
+
+```{r}
+get_dupes(dat = datos_ventas, id_venta)
+```
+
++ Otra función super popular es get_one_to_one(), esta función muestra que columnas (si es que las hay)
+tienen relaciones uno a uno entre sí. Es decir, si podríamos formar una función biyectiva entre dos columnas
+
++ Voy a usar para ejemplificar esto, un dataframe que ya viene en la librería {dplyr} llamado starwars
 
 ```{r}
 starwars
@@ -171,16 +182,24 @@ starwars
 datos <- dplyr::starwars
 ```
 
++ Voy a tomar sólo los primeros 10 renglones
+
 ```{r}
-datos[1:10,]
+datos |> head(n = 10)
 ```
 
++ Si yo quisiera saber si en estos 10 primeros renglones hay algunas variables que tienen una relación uno a uno
 
 ```{r}
 datos[1:10,] %>%
   get_one_to_one()
 ```
 
+```{r}
+datos[1:10,]
+```
+
++ Veamos qué pasa en los primero 5 renglones
 
 ```{r}
 datos[1:5,] %>%
@@ -188,8 +207,18 @@ datos[1:5,] %>%
 ```
 
 ```{r}
+datos[1:5,] %>% dplyr::select(name, height, mass, skin_color)
+```
+
+```{r}
 datos[1:5,]
 ```
+
+```{r}
+datos[1:5,] %>% dplyr::select(birth_year, films)
+```
+
++ Veamos qué pasa con algunos de nuestros dataset "reales"
 
 ```{r}
 data_superstore <- read_csv("Sample - Superstore.csv")
@@ -204,6 +233,12 @@ data_superstore |> get_one_to_one()
 ```
 
 ```{r}
+data_superstore |> dplyr::select(`Customer ID`, `Customer Name`)
+```
+
+## Manejo de NAs (primera visita)
+
+```{r}
 mi_dataframe <- data.frame(v1 = c(1, NA, 3),
                            v2 = c(NA, NA, NA),
                            v3 = c("a", NA, "b"))
@@ -211,9 +246,288 @@ mi_dataframe <- data.frame(v1 = c(1, NA, 3),
 mi_dataframe
 ```
 
++ Una primera solución rápida, pero probablemente incorrecta es quitar los renglones y columnas que tienen NA (esto es muy drástico)
+
+
 ```{r}
 mi_dataframe |> remove_empty(c("rows", "cols"))
 ```
++ Esto es muy drástico
+
+```{r}
+library(visdat)
+```
+
++ Voy a utilizar el conjunto de datos airquality, ya viene en R base
+
+```{r}
+datos <- airquality
+head(datos)
+```
+
++ Una de las funciones básicas de esta librería
+
+```{r}
+datos |> vis_dat()
+```
++ Si sólo nos queremos enfocar en los NAs
+
+```{r}
+datos |> vis_miss()
+```
++ Una librería para identificar, analizar y tratar los NAs es la librería {naniar}
+
+```{r}
+library(naniar)
+```
+
+```{r}
+datos |> gg_miss_var()
+```
++ La gráfica la podemos volver más útil... Analizamos sólo los NAs
+
+```{r}
+datos |> gg_miss_var(facet = Month)
+```
+
++ La función `add_prop_miss()` me dice la proporción de faltantes por renglón
+
+```{r}
+datos %>%
+  add_prop_miss() %>%
+  head(n = 15)
+```
+
++ Podemos hacer también un resumen de los faltantes por columna
+
+```{r}
+datos |> miss_var_summary()
+```
+
++ Veamos una representación gráfica
+
+```{r}
+datos |> ggplot(aes(x = Solar.R, y = Ozone)) + 
+  geom_miss_point()
+```
+
+
+```{r}
+datos |> ggplot(aes(x = Solar.R, y = Ozone)) + 
+  geom_miss_point() + 
+  facet_wrap(~Month)
+```
+
+```{r}
+datos |> miss_var_summary()
+```
+
+```{r}
+datos |> miss_var_table()
+```
++ ¿Habrá un comportamiento de los NAs en Ozone conforme se fue registrando? i.e. cómo son las rachas de NAs
+
+```{r}
+miss_var_run(datos,
+             Ozone)
+```
+
++ A veces cuando se tienen muchos muchos renglones, conviene más analizar estas rachas por secciones
+
+```{r}
+miss_var_span(datos,
+              Ozone,
+              span_every = 20)
+```
++ Podemos analizar estos faltantes por Mes
+
+```{r}
+datos %>%
+ group_by(Month) %>%
+ miss_var_summary() %>%
+ filter(variable == "Ozone")
+```
+
+
++ Las funciones `shadow` sirven para hacer un seguimiento de los valores faltantes.
+
+La función `as_shadow` crea un dataframe con el mismo conjunto de columnas, pero con los nombres de las columnas a los que se les añade un sufijo _NA.
+
+```{r}
+datos |> as_shadow()
+```
+
++ Pega la tabla original y la tabla sombra
+
+```{r}
+datos |> bind_shadow()
+```
+
++ Podemos analizar esta tablota
+
+```{r}
+datos |> bind_shadow() |> glimpse()
+```
+
+Podemos hacer estadística de los NAs
+
+```{r}
+datos %>% bind_shadow() %>% 
+  group_by(Ozone_NA) %>% 
+  summarise_at(.vars = "Solar.R",
+               .funs = c("mean", "sd", "var", "min", "max"),
+               na.rm = TRUE)
+```
+
+```{r}
+datos %>% bind_shadow() %>%
+  ggplot(aes(x = Temp, colour = Ozone_NA)) + 
+  geom_density()
+```
+```{r}
+datos %>% bind_shadow() %>%
+  ggplot(aes(x = Solar.R, colour = Ozone_NA)) + 
+  geom_density()
+```
+
++ Si no me decido a quitar los NAs, prefiero rellenarlos eso NAs
+
++ Voy "completar" los datos
+
+```{r}
+library(simputation)
+```
+
++ La mayoría de sus métodos se basan en completar los datos faltantes con regresión
+
++ Recordatorio: La variable Ozone es la que queremos rellenar pues tiene muchos NAs
+
+```{r}
+datos_imp_reglin <- impute_lm(datos, Ozone ~ Temp + Wind)
+```
+
++ Veamos cómo quedaron mis datos
+
+```{r}
+datos_imp_reglin |> head(n = 15)
+```
+
+```{r}
+datos_imp_reglin |> miss_var_summary()
+```
+
++ Ya "arreglé" el tema de NAs en la columna Ozone
+
+
+```{r}
+datos %>% bind_shadow() %>%
+  as.data.frame() %>% 
+  impute_lm(Ozone ~ Temp + Wind) %>%
+  ggplot(aes(x = Temp,
+             y = Ozone,
+             colour = Ozone_NA)) + 
+  geom_point()
+```
+
+```{r}
+datos %>% bind_shadow() %>%
+  as.data.frame() %>% 
+  impute_lm(Ozone ~ Temp + Wind) %>%
+  ggplot(aes(x = Wind,
+             y = Ozone,
+             colour = Ozone_NA)) + 
+  geom_point()
+```
+
+```{r}
+library(mice)
+```
+
+```{r}
+datos |> md.pattern()
+```
+
+
+```{r}
+datos_imp_reglin2 <- impute_lm(datos, Ozone ~ Solar.R + Temp + Wind)
+```
+
+```{r}
+datos_imp_reglin2 |> head()
+```
+
+```{r}
+datos_imp_reglin2 |> miss_var_summary()
+```
+
+```{r}
+datos_imp_reglin_med <- impute_median(datos_imp_reglin2, Ozone ~ Month)
+```
+
+```{r}
+datos_imp_reglin_med |> head(n = 15)
+```
+
+```{r}
+datos_imp_reglin_med |> miss_var_summary()
+```
+
+```{r}
+datos_imp_arbol <- impute_cart(datos, Ozone ~ .)
+```
+
+```{r}
+datos_imp_arbol |> head()
+```
+
+```{r}
+datos_imp_arbol |> miss_var_summary()
+```
+
+```{r}
+datos %>% bind_shadow() %>%
+  as.data.frame() %>% 
+  impute_cart(Ozone ~ .) %>%
+  ggplot(aes(x = Temp,
+             y = Ozone,
+             colour = Ozone_NA)) + 
+  geom_point()
+```
+
+```{r}
+datos %>% bind_shadow()
+```
+
+
+
+```{r}
+datos %>% bind_shadow() %>%
+  as.data.frame() %>% 
+  impute_cart(Ozone ~ .) %>%
+  ggplot(aes(x = Temp,
+             y = Ozone,
+             colour = Solar.R_NA)) + 
+  geom_point()
+```
+
+
++ Se puede utiliza un modelo como árboles de decisión para predecir qué variables y sus valores son importantes para predecir la proporción de valores faltantes
+
+
+```{r}
+library(rpart)
+library(rpart.plot)
+```
+
+```{r}
+datos %>%
+  add_prop_miss() %>%
+  rpart(prop_miss_all ~ ., data = .) %>%
+  prp(type = 4, extra = 101, prefix = "Prop. Miss = ")
+```
+
+
+
 ```{r}
 mi_dataframe <- data.frame(estudiantes = c("Felipe", "Verónica", "Alina"),
                            calificaciones = 8:10,
@@ -248,7 +562,6 @@ df_que_me_pasaron
 ```{r}
 row_to_names(df_que_me_pasaron, row_number = 4)
 ```
-
 
 ## De EXCEL y sus infiernos con las fechas
 
