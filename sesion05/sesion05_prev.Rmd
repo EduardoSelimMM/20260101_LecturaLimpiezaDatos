@@ -1,0 +1,321 @@
+```{r}
+#install.packages("readxl")
+library(readxl) # Para leer archivos de Excel
+library(dplyr)
+library(ggplot2)
+library(lubridate) # Sirve para manejar algunas variables de fecha
+```
+
++ Empecemos cargando de nuevo dataset del archivo "VentasNum2024.xlsx"
+
+```{r}
+datos_ventas <- readxl::read_xlsx("VentasNum2024.xlsx", sheet = "Ventas")
+```
+
+```{r}
+datos_ventas |> head()
+```
+
+
+```{r}
+names(datos_ventas)
+```
+
+```{r}
+library(janitor)
+```
+
+
+```{r}
+datos_ventas |> clean_names()
+```
+
+```{r}
+datos_ventas <- datos_ventas |> clean_names()
+```
+
+
+```{r}
+head(datos_ventas)
+```
+
+Para casos en los que se tiene un conjunto de archivos de datos que parecen idénticos 
+
+Pero hacemos dplyr::bind_rows() o rbind() y fallan, ya sea porque las columnas son diferentes o porque las clases de las columnas no coinciden entre los dataframes
+
+compare_df_cols() toma los nombres sin comillas de data.frames / tibbles, o una lista de data.frames, y devuelve un resumen de cómo se comparan.
+
+Es decir, observa cuáles son los tipos de columnas, cuáles faltan o están presentes en las diferentes entradas, y cómo difieren los tipos de columnas.
+
+
+```{r}
+df1 <- data.frame(a = 1:2, b = c("grande", "pequeño"))
+df2 <- data.frame(a = 10:12, b = c("mediano", "pequeño", "grande"), c = 0,
+                  stringsAsFactors = TRUE)
+df3 <- df1 |> dplyr::mutate(b = as.character(b))
+```
+
+```{r}
+df1
+```
+
+```{r}
+df2
+```
+
+```{r}
+df3
+```
+```{r}
+compare_df_cols(df1, df2, df3)
+```
+
+```{r}
+compare_df_cols(df1, df2, df3, return = "mismatch")
+```
+
+```{r}
+compare_df_cols(df1, df2, df3, return = "mismatch",
+                bind_method = "rbind")
+```
+compare_df_cols_same() devuelve TRUE o FALSE indicando si los dataframes efectivamente se pueden unir por filas con el método de unión especificado.
+
+
+```{r}
+compare_df_cols_same(df1, df3)
+```
+
+```{r}
+compare_df_cols_same(df2, df3)
+```
+
+
+```{r}
+mtcars %>%
+  tabyl(gear, cyl)
+```
+
+```{r}
+mtcars %>%
+  tabyl(gear, cyl, am)
+```
+
+```{r}
+mtcars %>%
+  tabyl(gear, cyl) %>%
+  adorn_totals("col")
+```
+
+```{r}
+mtcars %>%
+  tabyl(gear, cyl) %>%
+  adorn_totals("col") %>%
+  adorn_percentages("row")
+```
+
+```{r}
+mtcars %>%
+  tabyl(gear, cyl) %>%
+  adorn_totals("col") %>%
+  adorn_percentages("row") %>%
+  adorn_pct_formatting(digits = 2)
+```
+
+```{r}
+mtcars %>%
+  tabyl(gear, cyl) %>%
+  adorn_totals("col") %>%
+  adorn_percentages("row") %>%
+  adorn_pct_formatting(digits = 2) %>%
+  adorn_ns()
+```
+
+```{r}
+mtcars %>%
+  tabyl(gear, cyl) %>%
+  adorn_totals("col") %>%
+  adorn_percentages("row") %>%
+  adorn_pct_formatting(digits = 2) %>%
+  adorn_ns() %>%
+  adorn_title()
+```
+
+```{r}
+get_dupes(mtcars, wt, cyl)
+```
+
+```{r}
+get_dupes(datos_ventas, id_venta)
+```
+
+
+get_one_to_one(): Esta función muestra que columnas (si es que las hay)
+tienen relaciones uno a uno entre sí.
+
+```{r}
+library(dplyr)
+```
+
+```{r}
+starwars
+```
+
+```{r}
+datos <- dplyr::starwars
+```
+
+```{r}
+datos[1:10,]
+```
+
+
+```{r}
+datos[1:10,] %>%
+  get_one_to_one()
+```
+
+
+```{r}
+datos[1:5,] %>%
+  get_one_to_one()
+```
+
+```{r}
+datos[1:5,]
+```
+
+```{r}
+data_superstore <- read_csv("Sample - Superstore.csv")
+```
+
+```{r}
+head(data_superstore)
+```
+
+```{r}
+data_superstore |> get_one_to_one()
+```
+
+```{r}
+mi_dataframe <- data.frame(v1 = c(1, NA, 3),
+                           v2 = c(NA, NA, NA),
+                           v3 = c("a", NA, "b"))
+
+mi_dataframe
+```
+
+```{r}
+mi_dataframe |> remove_empty(c("rows", "cols"))
+```
+```{r}
+mi_dataframe <- data.frame(estudiantes = c("Felipe", "Verónica", "Alina"),
+                           calificaciones = 8:10,
+                           curso = "Matemáticas")
+
+mi_dataframe
+```
+
+```{r}
+mi_dataframe |> remove_constant()
+```
+
+
+```{r}
+df_que_me_pasaron <- data.frame(X_1 = c(NA, "ID", 1:3),
+                                X_2 = c(NA, "Value", 4:6))
+
+df_que_me_pasaron
+```
+
+```{r}
+row_to_names(df_que_me_pasaron, row_number = 2)
+```
+
+```{r}
+df_que_me_pasaron <- data.frame(X_1 = c(NA, NA, NA, "ID", 1:3),
+                                X_2 = c(NA, NA, NA, "Value", 4:6))
+
+df_que_me_pasaron
+```
+
+```{r}
+row_to_names(df_que_me_pasaron, row_number = 4)
+```
+
+
+## De EXCEL y sus infiernos con las fechas
+
+Algunas veces se cargan datos desde Excel y se ve un valor como 42223 donde debería haber una fecha... ¿Qué hacemos?
+
+Primero recuperarnos del micro-infarto
+
+Luego usamos la función excel_numeric_to_date()
+
+Esta función convierte esos números (seriales) a la clase Date
+
+Tiene opciones para diferentes sistemas de codificación de fechas de Excel, preservando fracciones de una fecha como hora (en cuyo caso el valor devuelto es de clase POSIXlt) y especificando una zona horaria.
+
+```{r}
+excel_numeric_to_date(41103)
+```
+
+```{r}
+excel_numeric_to_date(41103.01) # ignora los puntos decimales
+```
+
+```{r}
+excel_numeric_to_date(41103.01, include_time = TRUE) # regresa un objeti POSIXlt
+```
+
+```{r}
+excel_numeric_to_date(41103.01, date_system = "mac pre-2011")
+```
+
+Las nuevas funciones convert_to_date() y convert_to_datetime() son más robustas ante una mezcla de tipos de entrada.
+
+Particularmente útiles cuando se leen muchas excels que deberían tener los mismos formatos de columna, pero no los tienen.
+
+```{r}
+convert_to_date(c("2020-02-29", "40000.1"))
+```
+
+```{r}
+convert_to_date(c("2020-02-29", "40000.1", "26-04-2021"))
+```
+
+
+```{r}
+convert_to_date(c("2020-02-29", "40000.1", "04-26-2021"))
+```
+
+```{r}
+convert_to_date(c("2020-02-29", "40000.1", "2021/04/26"))
+```
+
+```{r}
+mi_vector <- c("strongly agree", "agree", "neutral", "neutral", "disagree", "strongly agree", "agree", "neutral", "neutral")
+
+mi_vector
+```
+
+```{r}
+factor(mi_vector,
+       levels = c("strongly agree", "agree", "neutral", "disagree", "strongly disagree"))
+```
+
+```{r}
+mi_vector <- factor(mi_vector,
+                    levels = c("strongly agree", "agree", "neutral", "disagree", "strongly disagree"))
+```
+
+```{r}
+top_levels(mi_vector)
+```
+
+```{r}
+top_levels(mi_vector, n = 1)
+```
+
+```{r}
+top_levels(mi_vector, n = 2)
+```
