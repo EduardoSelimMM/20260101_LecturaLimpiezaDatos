@@ -1,3 +1,10 @@
+---
+title: "Sesion 5"
+author: "Mi fabuloso nombre"
+date: "26 de febrero de 2026"
+output: html_document
+---
+
 ```{r}
 #install.packages("readxl")
 library(readxl) # Para leer archivos de Excel
