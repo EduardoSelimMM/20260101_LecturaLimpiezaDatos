@@ -41,10 +41,9 @@ Responda las siguientes preguntas de 2 formas. Una utilizando verbos de {dplyr} 
 
 ## Segunda parte - Python: API APOD de la NASA
 
-Usarán la API de la NASA llamada APOD (Astronomy Picture of the Day). Busca su documentación en https://api.nasa.gov/
-Genera una API key en el sitio https://api.nasa.gov/
-Cada miembro del equipo debe seleccionar la palabra correspondiente al número de la primera letra de tu apellido paterno.
-Por ejemplo, 1 = A, 2 = B, 3 = C, etc. Si tu apellido empieza con Ñ, selecciona la última palabra de la lista. Si la palabra coincide con la de algunos miembro de tu equipo, toma la inmediata posterior.
++ Usarán la API de la NASA llamada APOD (Astronomy Picture of the Day). Busca su documentación en https://api.nasa.gov/
++ Genera una API key en el sitio https://api.nasa.gov/
++ Cada miembro del equipo debe seleccionar la palabra correspondiente al número de la primera letra de tu apellido paterno. Por ejemplo, 1 = A, 2 = B, 3 = C, etc. Si tu apellido empieza con Ñ, selecciona la última palabra de la lista. Si la palabra coincide con la de algunos miembro de tu equipo, toma la inmediata posterior.
 
 1. gravitational
 2. retrograde
