@@ -82,15 +82,17 @@ Responda las siguientes preguntas de 2 formas. Una utilizando verbos de {dplyr} 
 Basándose en solicitudes de la API en el campo "explanation" haz búsquedas basadas en tu palabra y responde la siguientes preguntas:
 
 **Preguntas del equipo:**
-¿Qué tipo de parámetros admite la solicitud?
-¿Qué tipo respuestas se pueden obtener con cada solicitud?
-¿Qué tipo de restricciones tiene la API?
+
+1. ¿Qué tipo de parámetros admite la solicitud?
+2. ¿Qué tipo respuestas se pueden obtener con cada solicitud?
+3. ¿Qué tipo de restricciones tiene la API?
 
 **Preguntas de cada miembro del equipo:**
-Para las búsquedas de tu palabra, ¿cuántos resultados obtuviste?
-Para las búsquedas de tu palabra, ¿en qué rangos de fechas se introdujo el recurso?
-Para las búsquedas de tu palabra, ¿cuáles son los "media_type" más comunes?
-Para las búsquedas de tu palabra, ¿quiénes son los autores o instituciones propietaria de los derechos (i.e. el copyright)?
+
+1. Para las búsquedas de tu palabra, ¿cuántos resultados obtuviste?
+2. Para las búsquedas de tu palabra, ¿en qué rangos de fechas se introdujo el recurso?
+3. Para las búsquedas de tu palabra, ¿cuáles son los "media_type" más comunes?
+4. Para las búsquedas de tu palabra, ¿quiénes son los autores o instituciones propietaria de los derechos (i.e. el copyright)?
 
 ## Tercera parte - Lenguaje R y Python (ambos): Calidad del café
 
