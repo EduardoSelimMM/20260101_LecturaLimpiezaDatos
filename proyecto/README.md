@@ -1,6 +1,10 @@
 # Proyecto de fin de módulo
 
-El proyecto final se realizará en **equipos de 3 personas**. Las tres personas tendrán que crear repositorios: dos personas en local y una en remoto. El repositorio remoto se considerará como un repositorio colaborativo, en el que las 3 personas trabajarán.
+El proyecto final se realizará en **equipos de 3 personas**.
+
+**ENTREGA:** Un documento .qmd (QUARTO) y su correspondiente archivo HTML, donde se describa detalladamente sus procedimientos.
+
+**FECHA DE ENTREGA:** 7 de mayo de 2026
 
 ## Primera parte - R: Vuelos de NYC
 
@@ -73,16 +77,17 @@ Por ejemplo, 1 = A, 2 = B, 3 = C, etc. Si tu apellido empieza con Ñ, selecciona
 29. alpha
 30. Sulfur
 
-Basándose en solicitudes de la API en el campo "explanation" haz búsquedas basadas en tu palabra y responde la siguientes preguntas.
-Cuidado: La API se puede sentir "atacada" y bloquearte si haces muchas solicitudes rápidamente.
-Cuidado: La API sólo permite un número finito de solicitudes.
++ **Cuidado:** La API se puede sentir "atacada" y bloquearte si haces muchas solicitudes rápidamente.
++ **Cuidado:** La API sólo permite un número finito de solicitudes.
 
-Preguntas del equipo:
+Basándose en solicitudes de la API en el campo "explanation" haz búsquedas basadas en tu palabra y responde la siguientes preguntas:
+
+**Preguntas del equipo:**
 ¿Qué tipo de parámetros admite la solicitud?
 ¿Qué tipo respuestas se pueden obtener con cada solicitud?
 ¿Qué tipo de restricciones tiene la API?
 
-Preguntas de cada miembro del equipo:
+**Preguntas de cada miembro del equipo:**
 Para las búsquedas de tu palabra, ¿cuántos resultados obtuviste?
 Para las búsquedas de tu palabra, ¿en qué rangos de fechas se introdujo el recurso?
 Para las búsquedas de tu palabra, ¿cuáles son los "media_type" más comunes?
@@ -117,5 +122,3 @@ Actividad 9: Elabore una visualización con {ggplot2} que relacione el mes de ex
 Actividad 10: Elabore una visualización con {ggplot2} que relacione el `aftertaste`, `acidity`, `body` y `species` en un mismo canvas.
 
 *Importante:* Sus visualizaciones deben tener formato suficientemente bueno para publicar en alguna revista.
-
-ENTREGA: Un documento .qmd (QUARTO) y su correspondiente archivo HTML, donde se describa detalladamente sus procedimientos.
