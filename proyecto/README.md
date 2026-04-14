@@ -1,6 +1,6 @@
 # Proyecto de fin de módulo
 
-El proyecto final se realizará en **equipos de 4 personas**.
+El proyecto final se realizará en **el mismo equipo que el Módulo 4** (se cotejará la lista con el Prof. Carlos).
 
 **ENTREGA:** Un documento .qmd (QUARTO) y su correspondiente archivo HTML, donde se describa detalladamente sus procedimientos.
 
